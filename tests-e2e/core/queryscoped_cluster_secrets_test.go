@@ -149,6 +149,7 @@ var _ = Describe("Query-scoped GitOpsDeployment tests", func() {
 
 					// We actually need a managed environment secret containing a kubeconfig that has the bearer token
 					kubeConfigContents := k8s.GenerateKubeConfig(apiServerURL, userName, userToken)
+
 					secret := corev1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      "managed-env-deploys-to-" + userName,

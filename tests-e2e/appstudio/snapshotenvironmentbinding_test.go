@@ -564,30 +564,16 @@ var _ = Describe("SnapshotEnvironmentBinding Reconciler E2E tests", func() {
 			Expect(err).To(Succeed())
 
 			By("creating a new Environment targetting a fake remote cluster")
-			environment := appstudiosharedv1.Environment{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "my-env",
-					Namespace: fixture.GitOpsServiceE2ENamespace,
-				},
-				Spec: appstudiosharedv1.EnvironmentSpec{
-					DisplayName:        "my-env",
-					DeploymentStrategy: appstudiosharedv1.DeploymentStrategy_AppStudioAutomated,
-					ParentEnvironment:  "",
-					Tags:               []string{},
-					Configuration: appstudiosharedv1.EnvironmentConfiguration{
-						Env: []appstudiosharedv1.EnvVarPair{},
-					},
-					// The cluster doesn't need to be real for this test
-					UnstableConfigurationFields: &appstudiosharedv1.UnstableEnvironmentConfiguration{
-						KubernetesClusterCredentials: appstudiosharedv1.KubernetesClusterCredentials{
-							TargetNamespace:            "namespace1",
-							APIURL:                     "https://fake-url-does-not-exist.redhat.com",
-							ClusterCredentialsSecret:   "my-secret",
-							AllowInsecureSkipTLSVerify: true,
-						},
-					},
+			environment := buildEnvironmentResource("my-env", "my-env", "", appstudiosharedv1.EnvironmentType_POC)
+			environment.Spec.UnstableConfigurationFields = &appstudiosharedv1.UnstableEnvironmentConfiguration{
+				KubernetesClusterCredentials: appstudiosharedv1.KubernetesClusterCredentials{
+					TargetNamespace:            "namespace1",
+					APIURL:                     "https://fake-url-does-not-exist.redhat.com",
+					ClusterCredentialsSecret:   "my-secret",
+					AllowInsecureSkipTLSVerify: true,
 				},
 			}
+
 			err = k8s.Create(&environment, k8sClient)
 			Expect(err).ToNot(HaveOccurred())
 

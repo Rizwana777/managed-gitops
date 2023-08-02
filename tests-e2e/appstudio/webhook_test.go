@@ -13,9 +13,9 @@ import (
 	gitopsDeplFixture "github.com/redhat-appstudio/managed-gitops/tests-e2e/fixture/gitopsdeployment"
 	syncRunFixture "github.com/redhat-appstudio/managed-gitops/tests-e2e/fixture/gitopsdeploymentsyncrun"
 	"github.com/redhat-appstudio/managed-gitops/tests-e2e/fixture/k8s"
+	managedEnvFixture "github.com/redhat-appstudio/managed-gitops/tests-e2e/fixture/managedenvironment"
 	promotionRunFixture "github.com/redhat-appstudio/managed-gitops/tests-e2e/fixture/promotionrun"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -345,33 +345,13 @@ var _ = Describe("Webhook E2E tests", func() {
 			kubeConfigContents, apiServerURL, err := fixture.ExtractKubeConfigValues()
 			Expect(err).ToNot(HaveOccurred())
 
-			secret := &corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "my-managed-env-secret",
-					Namespace: fixture.GitOpsServiceE2ENamespace,
-				},
-				Type:       "managed-gitops.redhat.com/managed-environment",
-				StringData: map[string]string{"kubeconfig": kubeConfigContents},
-			}
+			managedEnv, secret := managedEnvFixture.BuildManagedEnvironment(apiServerURL, kubeConfigContents, true)
 
-			managedEnv := &managedgitopsv1alpha1.GitOpsDeploymentManagedEnvironment{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "my-managed-env",
-					Namespace: fixture.GitOpsServiceE2ENamespace,
-				},
-				Spec: managedgitopsv1alpha1.GitOpsDeploymentManagedEnvironmentSpec{
-					APIURL:                     apiServerURL,
-					ClusterCredentialsSecret:   secret.Name,
-					AllowInsecureSkipTLSVerify: true,
-					CreateNewServiceAccount:    true,
-				},
-			}
+			err = k8s.Create(&secret, k8sClient)
+			Expect(err).To(BeNil())
 
-			err = k8s.Create(secret, k8sClient)
-			Expect(err).ToNot(HaveOccurred())
-
-			err = k8s.Create(managedEnv, k8sClient)
-			Expect(err).ToNot(HaveOccurred())
+			err = k8s.Create(&managedEnv, k8sClient)
+			Expect(err).To(BeNil())
 
 			gitOpsDeploymentResource := gitopsDeplFixture.BuildGitOpsDeploymentResource(name,
 				repoURL, "resources/test-data/sample-gitops-repository/environments/overlays/dev",

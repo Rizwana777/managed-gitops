@@ -7,6 +7,7 @@ import (
 	"github.com/redhat-appstudio/managed-gitops/tests-e2e/fixture"
 	"github.com/redhat-appstudio/managed-gitops/tests-e2e/fixture/k8s"
 	"github.com/redhat-appstudio/managed-gitops/tests-e2e/fixture/managedenvironment"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -20,7 +21,7 @@ var _ = Describe("Managed Environment Status E2E tests", func() {
 			By("creating the GitOpsDeploymentManagedEnvironment with a target cluster that does not exist")
 
 			apiServerURL := "https://api2.fake-e2e-test-data.origin-ci-int-gce.dev.rhcloud.com:6443"
-			managedEnv, secret := buildManagedEnvironment(apiServerURL, k8s.GenerateFakeKubeConfig(), true)
+			managedEnv, secret := managedenvironment.BuildManagedEnvironment(apiServerURL, k8s.GenerateFakeKubeConfig(), true)
 
 			k8sClient, err := fixture.GetE2ETestUserWorkspaceKubeClient()
 			Expect(err).To(Succeed())
@@ -140,7 +141,7 @@ var _ = Describe("Managed Environment Status E2E tests", func() {
 			kubeConfigContents, apiServerURL, err := fixture.ExtractKubeConfigValues()
 			Expect(err).ToNot(HaveOccurred())
 
-			managedEnv, secret := buildManagedEnvironment(apiServerURL, kubeConfigContents, true)
+			managedEnv, secret := managedenvironment.BuildManagedEnvironment(apiServerURL, kubeConfigContents, true)
 
 			k8sClient, err := fixture.GetE2ETestUserWorkspaceKubeClient()
 			Expect(err).To(Succeed())

@@ -14,6 +14,7 @@ import (
 	"github.com/redhat-appstudio/managed-gitops/backend-shared/util"
 	"github.com/redhat-appstudio/managed-gitops/tests-e2e/fixture"
 	"github.com/redhat-appstudio/managed-gitops/tests-e2e/fixture/k8s"
+	managedEnvFixture "github.com/redhat-appstudio/managed-gitops/tests-e2e/fixture/managedenvironment"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -50,7 +51,7 @@ var _ = Describe("GitOpsDeployment Managed Environment E2E tests", func() {
 			kubeConfigContents, apiServerURL, err := fixture.ExtractKubeConfigValues()
 			Expect(err).ToNot(HaveOccurred())
 
-			managedEnv, secret := buildManagedEnvironment(apiServerURL, kubeConfigContents, true)
+			managedEnv, secret := managedEnvFixture.BuildManagedEnvironment(apiServerURL, kubeConfigContents, true)
 
 			k8sClient, err := fixture.GetE2ETestUserWorkspaceKubeClient()
 			Expect(err).To(Succeed())
@@ -188,7 +189,7 @@ var _ = Describe("GitOpsDeployment Managed Environment E2E tests", func() {
 
 			kubeConfigContents := k8s.GenerateKubeConfig(apiServerURL, fixture.GitOpsServiceE2ENamespace, tokenSecret)
 
-			managedEnv, secret := buildManagedEnvironment(apiServerURL, kubeConfigContents, false)
+			managedEnv, secret := managedEnvFixture.BuildManagedEnvironment(apiServerURL, kubeConfigContents, false)
 
 			err = k8s.Create(&secret, k8sClient)
 			Expect(err).ToNot(HaveOccurred())
@@ -328,7 +329,7 @@ var _ = Describe("GitOpsDeployment Managed Environment E2E tests", func() {
 			// Set the tokenSecret to be "" to intentionally fail
 			kubeConfigContents := k8s.GenerateKubeConfig(apiServerURL, fixture.GitOpsServiceE2ENamespace, "")
 
-			managedEnv, secret := buildManagedEnvironment(apiServerURL, kubeConfigContents, false)
+			managedEnv, secret := managedEnvFixture.BuildManagedEnvironment(apiServerURL, kubeConfigContents, false)
 
 			err = k8s.Create(&secret, k8sClient)
 			Expect(err).ToNot(HaveOccurred())
@@ -418,7 +419,7 @@ var _ = Describe("GitOpsDeployment Managed Environment E2E tests", func() {
 
 			kubeConfigContents := k8s.GenerateKubeConfig(apiServerURL, fixture.GitOpsServiceE2ENamespace, tokenSecret)
 
-			managedEnv, secret := buildManagedEnvironment(apiServerURL, kubeConfigContents, false)
+			managedEnv, secret := managedEnvFixture.BuildManagedEnvironment(apiServerURL, kubeConfigContents, false)
 
 			err = k8s.Create(&secret, k8sClient)
 			Expect(err).ToNot(HaveOccurred())
@@ -538,33 +539,13 @@ var _ = Describe("GitOpsDeployment Managed Environment E2E tests", func() {
 
 			kubeConfigContents := k8s.GenerateKubeConfig(apiServerURL, newNamespace.Name, tokenSecret)
 
-			secret := &corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "my-managed-env-secret",
-					Namespace: fixture.GitOpsServiceE2ENamespace,
-				},
-				Type:       "managed-gitops.redhat.com/managed-environment",
-				StringData: map[string]string{"kubeconfig": kubeConfigContents},
-			}
-			err = k8s.Create(secret, k8sClient)
-			Expect(err).ToNot(HaveOccurred())
+			managedEnv, secret := managedEnvFixture.BuildManagedEnvironment(apiServerURL, kubeConfigContents, true)
 
-			managedEnv := &managedgitopsv1alpha1.GitOpsDeploymentManagedEnvironment{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "my-managed-env",
-					Namespace: fixture.GitOpsServiceE2ENamespace,
-				},
-				Spec: managedgitopsv1alpha1.GitOpsDeploymentManagedEnvironmentSpec{
-					APIURL:                     apiServerURL,
-					ClusterCredentialsSecret:   secret.Name,
-					AllowInsecureSkipTLSVerify: true,
-					CreateNewServiceAccount:    false,
-					Namespaces:                 []string{newNamespace.Name},
-				},
-			}
+			err = k8s.Create(&secret, k8sClient)
+			Expect(err).To(BeNil())
 
-			err = k8s.Create(managedEnv, k8sClient)
-			Expect(err).ToNot(HaveOccurred())
+			err = k8s.Create(&managedEnv, k8sClient)
+			Expect(err).To(BeNil())
 
 			gitOpsDeploymentResource := gitopsDeplFixture.BuildGitOpsDeploymentResource("my-gitops-depl",
 				"https://github.com/redhat-appstudio/managed-gitops",
@@ -715,7 +696,7 @@ var _ = Describe("GitOpsDeployment Managed Environment E2E tests", func() {
 			kubeConfigContents, apiServerURL, err := fixture.ExtractKubeConfigValues()
 			Expect(err).ToNot(HaveOccurred())
 
-			managedEnv, secret := buildManagedEnvironment(apiServerURL, kubeConfigContents, true)
+			managedEnv, secret := managedEnvFixture.BuildManagedEnvironment(apiServerURL, kubeConfigContents, true)
 
 			k8sClient, err := fixture.GetE2ETestUserWorkspaceKubeClient()
 			Expect(err).To(Succeed())
@@ -836,27 +817,7 @@ var _ = Describe("GitOpsDeployment Managed Environment E2E tests", func() {
 			kubeConfigContents, apiServerURL, err := fixture.ExtractKubeConfigValues()
 			Expect(err).ToNot(HaveOccurred())
 
-			secret := corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "my-managed-env-secret",
-					Namespace: fixture.GitOpsServiceE2ENamespace,
-				},
-				Type:       "managed-gitops.redhat.com/managed-environment",
-				StringData: map[string]string{"kubeconfig": kubeConfigContents},
-			}
-
-			managedEnvA := managedgitopsv1alpha1.GitOpsDeploymentManagedEnvironment{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "my-managed-env-a",
-					Namespace: fixture.GitOpsServiceE2ENamespace,
-				},
-				Spec: managedgitopsv1alpha1.GitOpsDeploymentManagedEnvironmentSpec{
-					APIURL:                     apiServerURL,
-					ClusterCredentialsSecret:   secret.Name,
-					AllowInsecureSkipTLSVerify: true,
-					CreateNewServiceAccount:    true,
-				},
-			}
+			managedEnvA, secret := managedEnvFixture.BuildManagedEnvironment(apiServerURL, kubeConfigContents, true)
 
 			k8sClient, err := fixture.GetE2ETestUserWorkspaceKubeClient()
 			Expect(err).To(Succeed())
@@ -1087,30 +1048,4 @@ func extractKubeConfigValues() (string, string, error) {
 	}
 
 	return string(kubeConfigContents), cluster.Server, nil
-}
-
-func buildManagedEnvironment(apiServerURL string, kubeConfigContents string, createNewServiceAccount bool) (managedgitopsv1alpha1.GitOpsDeploymentManagedEnvironment, corev1.Secret) {
-	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "my-managed-env-secret",
-			Namespace: fixture.GitOpsServiceE2ENamespace,
-		},
-		Type:       "managed-gitops.redhat.com/managed-environment",
-		StringData: map[string]string{"kubeconfig": kubeConfigContents},
-	}
-
-	managedEnv := &managedgitopsv1alpha1.GitOpsDeploymentManagedEnvironment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "my-managed-env",
-			Namespace: fixture.GitOpsServiceE2ENamespace,
-		},
-		Spec: managedgitopsv1alpha1.GitOpsDeploymentManagedEnvironmentSpec{
-			APIURL:                     apiServerURL,
-			ClusterCredentialsSecret:   secret.Name,
-			AllowInsecureSkipTLSVerify: true,
-			CreateNewServiceAccount:    createNewServiceAccount,
-		},
-	}
-
-	return *managedEnv, *secret
 }

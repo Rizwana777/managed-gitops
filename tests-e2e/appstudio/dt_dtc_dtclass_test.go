@@ -95,8 +95,6 @@ var _ = Describe("DeploymentTarget DeploymentTargetClaim and Class tests", func(
 					},
 				},
 			}
-			err = k8s.Create(env, k8sClient)
-			Expect(err).ToNot(HaveOccurred())
 
 			By("Step 3 - ensure the DTC has a phase .status.phase of Pending, and has the correct target provisioner annotation")
 			Eventually(dtc, "60s", "1s").Should(dtcfixture.HasStatusPhase(appstudiosharedv1.DeploymentTargetClaimPhase_Pending))

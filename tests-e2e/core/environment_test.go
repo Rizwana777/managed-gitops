@@ -704,7 +704,7 @@ var _ = Describe("Environment E2E tests", func() {
 			kubeConfigContents, apiServerURL, err := fixture.ExtractKubeConfigValues()
 			Expect(err).ToNot(HaveOccurred())
 
-			managedEnv, _ := buildManagedEnvironment(apiServerURL, kubeConfigContents, true)
+			managedEnv, _ := managedenvironment.BuildManagedEnvironment(apiServerURL, kubeConfigContents, true)
 
 			fakeEnvName := "name"
 
